@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MySQL_vs_SQLServer.EF_DAL;
 using System.IO;
 
@@ -182,7 +180,7 @@ namespace MySQL_vs_SQLServer
 				db.Configuration.AutoDetectChangesEnabled = false;
 
 				DateTime startTime = DateTime.Now;
-				for (int i = 0; i < 1000; i++)
+				for (int i = 0; i < 100; i++)
 				{
 					var query = (from p in db.Persons
 								 join d in db.Departments on p.department equals d.id
