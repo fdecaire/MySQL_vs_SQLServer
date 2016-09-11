@@ -8,12 +8,15 @@ namespace MySQL_vs_SQLServer
 {
 	public class EfmySqlPerformanceTests
 	{
-		private int DepartmentKey;
+		private int _departmentKey;
 
 		public EfmySqlPerformanceTests()
 		{
 			File.Delete("c:\\mysqlresults.txt");
+		}
 
+		public void InitializeData()
+		{
 			// clean up any data from previous runs
 			using (var db = new SampleDataMySQLContext())
 			{
@@ -36,7 +39,7 @@ namespace MySQL_vs_SQLServer
 				db.SaveChanges();
 
 				// select the primary key of the department table for the only record that exists
-				DepartmentKey = (from d in db.Departments where d.name == "Operations" select d.id).FirstOrDefault();
+				_departmentKey = (from d in db.Departments where d.name == "Operations" select d.id).FirstOrDefault();
 			}
 		}
 
@@ -45,6 +48,8 @@ namespace MySQL_vs_SQLServer
 			double smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
+
 				double result = TestInsert();
 
 				if (smallest < 0)
@@ -65,6 +70,9 @@ namespace MySQL_vs_SQLServer
 			smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
+				TestInsert();
+
 				double result = TestUpdate();
 
 				if (smallest < 0)
@@ -85,6 +93,9 @@ namespace MySQL_vs_SQLServer
 			smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
+				TestInsert();
+
 				double result = TestSelect();
 
 				if (smallest < 0)
@@ -105,6 +116,9 @@ namespace MySQL_vs_SQLServer
 			smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
+				TestInsert();
+
 				double result = TestDelete();
 
 				if (smallest < 0)
@@ -149,17 +163,17 @@ namespace MySQL_vs_SQLServer
 				db.Configuration.AutoDetectChangesEnabled = false;
 				db.Configuration.ValidateOnSaveEnabled = false;
 
-				//test inserting 1000 records
+				//test inserting 10000 records (only ~1,000 names in text)
 				var startTime = DateTime.Now;
 				for (int j = 0; j < 10; j++)
 				{
 					for (int i = 0; i < 1000; i++)
 					{
-						var personRecord = new Person()
+						var personRecord = new Person
 						{
 							first = firstnames[i],
 							last = lastnames[i],
-							department = DepartmentKey
+							department = _departmentKey
 						};
 
 						db.Persons.Add(personRecord);
@@ -184,7 +198,7 @@ namespace MySQL_vs_SQLServer
 				{
 					var query = (from p in db.Persons
 								 join d in db.Departments on p.department equals d.id
-								 select p);
+								 select p).ToList();
 				}
 				var elapsedTime = DateTime.Now - startTime;
 
@@ -227,7 +241,7 @@ namespace MySQL_vs_SQLServer
 
 		public void WriteLine(string text)
 		{
-			using (var writer = new StreamWriter("c:\\mysqlresults.txt",true))
+			using (var writer = new StreamWriter("c:\\mysql_speed_tests.txt", true))
 			{
 				writer.WriteLine(text);
 			}

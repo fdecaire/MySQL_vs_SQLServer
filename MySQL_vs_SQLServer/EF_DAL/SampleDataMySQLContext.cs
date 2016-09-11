@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.Entity;
-using MySql.Data;
 using MySql.Data.Entity;
 
 namespace MySQL_vs_SQLServer.EF_DAL

@@ -8,12 +8,15 @@ namespace MySQL_vs_SQLServer
 {
 	public class EFSQLPerformanceTests
 	{
-		private int DepartmentKey;
+		private int _departmentKey;
 
 		public EFSQLPerformanceTests()
 		{
 			File.Delete("c:\\sqlserverresults.txt");
+		}
 
+		public void InitializeData()
+		{
 			// clean up any data from previous runs
 			using (var db = new SampleDataSQLContext())
 			{
@@ -27,7 +30,7 @@ namespace MySQL_vs_SQLServer
 				db.SaveChanges();
 
 				// insert one department
-				Department myDepartment = new Department()
+				var myDepartment = new Department
 				{
 					name = "Operations"
 				};
@@ -36,7 +39,7 @@ namespace MySQL_vs_SQLServer
 				db.SaveChanges();
 
 				// select the primary key of the department table for the only record that exists
-				DepartmentKey = (from d in db.Departments where d.name == "Operations" select d.id).FirstOrDefault();
+				_departmentKey = (from d in db.Departments where d.name == "Operations" select d.id).FirstOrDefault();
 			}
 		}
 
@@ -45,9 +48,10 @@ namespace MySQL_vs_SQLServer
 			double smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
 				double result = TestInsert();
 
-				if (smallest == -1)
+				if (smallest < 0)
 				{
 					smallest = result;
 				}
@@ -55,19 +59,22 @@ namespace MySQL_vs_SQLServer
 				{
 					if (result < smallest)
 					{
-						result = smallest;
+						smallest = result;
 					}
 				}
 			}
-			WriteLine("INSERT:" + smallest.ToString());
-			Console.WriteLine("INSERT:" + smallest.ToString());
+			WriteLine("INSERT:" + smallest);
+			Console.WriteLine("INSERT:" + smallest);
 
 			smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
+				TestInsert();
+
 				double result = TestUpdate();
 
-				if (smallest == -1)
+				if (smallest < 0)
 				{
 					smallest = result;
 				}
@@ -75,19 +82,22 @@ namespace MySQL_vs_SQLServer
 				{
 					if (result < smallest)
 					{
-						result = smallest;
+						smallest = result;
 					}
 				}
 			}
-			WriteLine("UPDATE:" + smallest.ToString());
-			Console.WriteLine("UPDATE:" + smallest.ToString());
+			WriteLine("UPDATE:" + smallest);
+			Console.WriteLine("UPDATE:" + smallest);
 
 			smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
+				TestInsert();
+
 				double result = TestSelect();
 
-				if (smallest == -1)
+				if (smallest < 0)
 				{
 					smallest = result;
 				}
@@ -95,19 +105,22 @@ namespace MySQL_vs_SQLServer
 				{
 					if (result < smallest)
 					{
-						result = smallest;
+						smallest = result;
 					}
 				}
 			}
-			WriteLine("SELECT:" + smallest.ToString());
-			Console.WriteLine("SELECT:" + smallest.ToString());
+			WriteLine("SELECT:" + smallest);
+			Console.WriteLine("SELECT:" + smallest);
 
 			smallest = -1;
 			for (int i = 0; i < 5; i++)
 			{
+				InitializeData();
+				TestInsert();
+
 				double result = TestDelete();
 
-				if (smallest == -1)
+				if (smallest < 0)
 				{
 					smallest = result;
 				}
@@ -115,12 +128,12 @@ namespace MySQL_vs_SQLServer
 				{
 					if (result < smallest)
 					{
-						result = smallest;
+						smallest = result;
 					}
 				}
 			}
-			WriteLine("DELETE:" + smallest.ToString());
-			Console.WriteLine("DELETE:" + smallest.ToString());
+			WriteLine("DELETE:" + smallest);
+			Console.WriteLine("DELETE:" + smallest);
 
 			WriteLine("");
 		}
@@ -130,16 +143,16 @@ namespace MySQL_vs_SQLServer
 			using (var db = new SampleDataSQLContext())
 			{
 				// read first and last names
-				List<string> firstnames = new List<string>();
-				using (StreamReader sr = new StreamReader(@"..\..\Data\firstnames.txt"))
+				var firstnames = new List<string>();
+				using (var sr = new StreamReader(@"..\..\Data\firstnames.txt"))
 				{
 					string line;
 					while ((line = sr.ReadLine()) != null)
 						firstnames.Add(line);
 				}
 
-				List<string> lastnames = new List<string>();
-				using (StreamReader sr = new StreamReader(@"..\..\Data\lastnames.txt"))
+				var lastnames = new List<string>();
+				using (var sr = new StreamReader(@"..\..\Data\lastnames.txt"))
 				{
 					string line;
 					while ((line = sr.ReadLine()) != null)
@@ -149,17 +162,17 @@ namespace MySQL_vs_SQLServer
 				db.Configuration.AutoDetectChangesEnabled = false;
 				db.Configuration.ValidateOnSaveEnabled = false;
 
-				//test inserting 1000 records
-				DateTime startTime = DateTime.Now;
+				//test inserting 10000 records (only ~1,000 names in text)
+				var startTime = DateTime.Now;
 				for (int j = 0; j < 10; j++)
 				{
 					for (int i = 0; i < 1000; i++)
 					{
-						Person personRecord = new Person()
+						var personRecord = new Person
 						{
 							first = firstnames[i],
 							last = lastnames[i],
-							department = DepartmentKey
+							department = _departmentKey
 						};
 
 						db.Persons.Add(personRecord);
@@ -167,7 +180,7 @@ namespace MySQL_vs_SQLServer
 				}
 
 				db.SaveChanges();
-				TimeSpan elapsedTime = DateTime.Now - startTime;
+				var elapsedTime = DateTime.Now - startTime;
 
 				return elapsedTime.TotalSeconds;
 			}
@@ -179,14 +192,14 @@ namespace MySQL_vs_SQLServer
 			{
 				db.Configuration.AutoDetectChangesEnabled = false;
 
-				DateTime startTime = DateTime.Now;
-				for (int i = 0; i < 100; i++)
+				var startTime = DateTime.Now;
+				for (int i = 0; i < 1000; i++)
 				{
 					var query = (from p in db.Persons
 								 join d in db.Departments on p.department equals d.id
 								 select p).ToList();
 				}
-				TimeSpan elapsedTime = DateTime.Now - startTime;
+				var elapsedTime = DateTime.Now - startTime;
 
 				return elapsedTime.TotalSeconds;
 			}
@@ -196,7 +209,7 @@ namespace MySQL_vs_SQLServer
 		{
 			using (var db = new SampleDataSQLContext())
 			{
-				DateTime startTime = DateTime.Now;
+				var startTime = DateTime.Now;
 				var query = (from p in db.Persons select p).ToList();
 				foreach (var item in query)
 				{
@@ -204,7 +217,7 @@ namespace MySQL_vs_SQLServer
 				}
 				db.SaveChanges();
 
-				TimeSpan elapsedTime = DateTime.Now - startTime;
+				var elapsedTime = DateTime.Now - startTime;
 
 				return elapsedTime.TotalSeconds;
 			}
@@ -214,12 +227,12 @@ namespace MySQL_vs_SQLServer
 		{
 			using (var db = new SampleDataSQLContext())
 			{
-				DateTime startTime = DateTime.Now;
+				var startTime = DateTime.Now;
 				var personQuery = (from pers in db.Persons select pers).ToList();
 
 				db.Persons.RemoveRange(personQuery);
 				db.SaveChanges();
-				TimeSpan elapsedTime = DateTime.Now - startTime;
+				var elapsedTime = DateTime.Now - startTime;
 
 				return elapsedTime.TotalSeconds;
 			}
@@ -227,7 +240,7 @@ namespace MySQL_vs_SQLServer
 
 		public void WriteLine(string text)
 		{
-			using (StreamWriter writer = new StreamWriter("c:\\sqlserverresults.txt",true))
+			using (var writer = new StreamWriter("c:\\ef6_speed_tests.txt",true))
 			{
 				writer.WriteLine(text);
 			}
